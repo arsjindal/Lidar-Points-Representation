@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 proj_H = 64
-proj_W = 512
+proj_W = 2048
 proj_fov_up = 3
 proj_fov_down = -25.0
 
@@ -19,14 +19,13 @@ remissions = np.zeros((0, 1), dtype=np.float32)    # [m ,1]: remission
   
 proj_pgm = np.full((proj_H, proj_W, 5), -1,
                           dtype=np.float32)
-proj_pgm1 = np.full((proj_H, proj_W, 5), -1,
-                          dtype=np.float32)
+
 
 # for each point, where it is in the range image
 proj_x = np.zeros((0, 1), dtype=np.float32)        # [m, 1]: x
 proj_y = np.zeros((0, 1), dtype=np.float32)        # [m, 1]: y
 
-scan = np.fromfile("000004.bin",dtype= np.float32)
+scan = np.fromfile("000000.bin",dtype= np.float32)
 scan = scan.reshape((-1, 4))
 
 
@@ -59,17 +58,19 @@ required_range = np.logical_and(yaw>=-np.pi/4, yaw <= np.pi/4)
  
 
 
-proj_x1 = proj_x[required_range]
-proj_y1 = proj_y[required_range]
+proj_x = proj_x[required_range]
+proj_y = proj_y[required_range]
 
 
-points1 = points[required_range]
-scan_x1 = scan_x[required_range]
-scan_y1 = scan_y[required_range]
-scan_z1 = scan_z[required_range]
+points = points[required_range]
+scan_x = scan_x[required_range]
+scan_y = scan_y[required_range]
+scan_z = scan_z[required_range]
 
-depth1 = depth[required_range]
-remissions1 = remissions[required_range]
+depth = depth[required_range]
+remissions = remissions[required_range]
+
+
 
 # scale to image size using angular resolution
 proj_x *= proj_W                              # in [0.0, W]
@@ -86,35 +87,17 @@ proj_y = np.minimum(proj_H - 1, proj_y)
 proj_y = np.maximum(0, proj_y).astype(np.int32)   # in [0,H-1]
 proj_y_copy = np.copy(proj_y)  # stope a copy in original order
 
-# scale to image size using angular resolution
-proj_x1 *= proj_W                              # in [0.0, W]
-proj_y1 *= proj_H                              # in [0.0, H]
-
-# round and clamp for use as index
-proj_x1 = np.floor(proj_x1)
-proj_x1 = np.minimum(proj_W - 1, proj_x1)
-proj_x1 = np.maximum(0, proj_x1).astype(np.int32)   # in [0,W-1]
-proj_x1_copy = np.copy(proj_x1)  # store a copy in orig order
-
-proj_y1 = np.floor(proj_y1)
-proj_y1 = np.minimum(proj_H - 1, proj_y1)
-proj_y1 = np.maximum(0, proj_y1).astype(np.int32)   # in [0,H-1]
-proj_y1_copy = np.copy(proj_y1)  # stope a copy in original order
-
 
 # assing to images
 #polar_grid_map = np.concatenate((points,remissions,depth),axis = 2)
+
 proj_pgm[proj_y,proj_x,0:3]  = points
 proj_pgm[proj_y,proj_x,3]  = remissions
 proj_pgm[proj_y,proj_x,4]  = depth
 
-proj_pgm1[proj_y1,proj_x1,0:3]  = points1
-proj_pgm1[proj_y1,proj_x1,3]  = remissions1
-proj_pgm1[proj_y1,proj_x1,4]  = depth1
-
-
-
+proj_pgm[:,767:1279,:] = proj_pgm[:,767:1279,:]
+"""
 plt.imshow(proj_pgm[:,:,1])
 plt.show()
-plt.imshow(proj_pgm1[:,:,1])
-plt.show()
+plt.imshow(proj_pgm1[:,767:1279,4])
+plt.show()"""
