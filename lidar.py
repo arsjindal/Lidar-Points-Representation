@@ -128,5 +128,5 @@ class LaserScan:
 
 
     # assing to images
-    polar_grid_map = np.vstack((points,remission,depth))
-    self.proj_pgm[proj_y,proj_x]  = polar_grid_map
+    polar_grid_map = np.concatenate((points,remission,depth),axis = 2)
+    self.proj_pgm[proj_y,proj_x,:]  = polar_grid_map
