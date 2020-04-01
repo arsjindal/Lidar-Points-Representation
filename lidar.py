@@ -12,7 +12,7 @@ Created on Sun Mar 29 22:15:15 2020
 
 @author: ravit
 """
-
+import pdb
 import numpy as np
 import matplotlib.pyplot as plt
 proj_H = 64
@@ -33,7 +33,7 @@ proj_pgm1 = np.full((proj_H, proj_W, 5), -1,
 proj_x = np.zeros((0, 1), dtype=np.float32)        # [m, 1]: x
 proj_y = np.zeros((0, 1), dtype=np.float32)        # [m, 1]: y
 
-scan = np.fromfile("000000.bin",dtype= np.float32)
+scan = np.fromfile("000114.bin",dtype= np.float32)
 scan = scan.reshape((-1, 4))
 
 
@@ -55,13 +55,13 @@ scan_z = points[:, 2]
 # get angles of all points
 yaw = -np.arctan2(scan_y, scan_x)
 pitch = np.arcsin(scan_z / depth)
-
+pdb.set_trace()
 # get projections in image coords
 proj_x = 0.5 * (yaw / np.pi + 1.0)          # in [0.0, 1.0]
 proj_y = 1.0 - (pitch + abs(fov_down)) / fov        # in [0.0, 1.0]
 
 
-
+'''
 required_range = np.logical_and(yaw>=-np.pi/4, yaw <= np.pi/4)
  
 
@@ -77,6 +77,7 @@ scan_z = scan_z[required_range]
 
 depth = depth[required_range]
 remissions = remissions[required_range]
+'''
 """
 # scale to image size using angular resolution
 proj_x *= proj_W                              # in [0.0, W]
@@ -119,9 +120,9 @@ proj_pgm[proj_y,proj_x,0:3]  = points
 proj_pgm[proj_y,proj_x,3]  = remissions
 proj_pgm[proj_y,proj_x,4]  = depth
 
-proj_pgm = proj_pgm[:,767:1279,:]
+#proj_pgm = proj_pgm[:,767:1279,:]
 
-plt.imshow(proj_pgm[:,:,1])
+plt.imshow(proj_pgm[:,:,4])
 plt.show()
 """
 plt.imshow(proj_pgm1[:,:,4])
