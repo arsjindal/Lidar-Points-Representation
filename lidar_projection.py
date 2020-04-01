@@ -1,7 +1,7 @@
 ###############################################################
-# 			Lidar Projection code for SqueezeNet
-#                       March 2020
-#   		Ravi, Vishnu| University of Pennsylvania
+# 	Lidar Projection code for SqueezeNet
+#                   March 2020
+#   	Ravi, Vishnu| University of Pennsylvania
 #          		
 ###############################################################
 
