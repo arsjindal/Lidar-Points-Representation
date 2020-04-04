@@ -94,7 +94,7 @@ class PGM:
         # plt.imshow(proj_pgm[:,:,4])
         # plt.show()
 
-if __name__ == "__main__":
+def main():    
     
     input_dir = '../dataset/sequences/04/velodyne/'
     output_dir = './pgm_output/'
@@ -117,4 +117,12 @@ if __name__ == "__main__":
         save_path = output_dir + file_name.split('.')[0]
         np.save(save_path, pgm.proj_pgm)
         
+def display():
         
+    pgm = PGM()
+    scan = np.fromfile('000000.bin', dtype= np.float32) 
+    pgm.generate_pgm(scan)
+    
+    plt.imshow(pgm.proj_pgm[...,0])
+    
+display()   
