@@ -13,7 +13,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def project_lidar2img_plane(scan,pixel_coor,rgb):
+def project_lidar2img_plane(scan,pixel_coor,rgb,label):
+    
 	proj_H = 64
 	proj_W = 2048
 	proj_fov_up = 3
@@ -22,8 +23,9 @@ def project_lidar2img_plane(scan,pixel_coor,rgb):
 
 	points = np.zeros((0, 3), dtype=np.float32)        # [m, 3]: x, y, z
 	remissions = np.zeros((0, 1), dtype=np.float32)    # [m ,1]: remission
-	  
-	proj_pgm = np.full((proj_H, proj_W, 8), -1,
+
+    # x,y,z,remission,range,r,g,b,label
+	proj_pgm = np.full((proj_H, proj_W, 9), -1,
 	                          dtype=np.float32)
 	proj_pgm1 = np.full((proj_H, proj_W, 5), -1,
 	                          dtype=np.float32)
@@ -74,17 +76,17 @@ def project_lidar2img_plane(scan,pixel_coor,rgb):
 	proj_pgm[proj_y,proj_x,0:3]  = points
 	proj_pgm[proj_y,proj_x,3]  = remissions
 	proj_pgm[proj_y,proj_x,4]  = depth
-	proj_pgm[proj_y,proj_x,5:]  = rgb[(pixel_coor[1, :]).astype(int),\
+	proj_pgm[proj_y,proj_x,5:8]  = rgb[(pixel_coor[1, :]).astype(int),\
 										(pixel_coor[0, :]).astype(int)]/255.0
-	#proj_pgm = proj_pgm[:,767:1279,:]
-
-	pdb.set_trace()
-	plt.imshow(proj_pgm[:,768:1281,4])
+	proj_pgm[proj_y,proj_x,8]  = label
+    
+    #pdb.set_trace()
+	plt.imshow(proj_pgm[:,768:1281,8])
 	plt.show()
 
-	plt.imshow(proj_pgm[:,768:1281,5:])
+	plt.imshow(proj_pgm[:,768:1281,5:8])
 	plt.show()
-
+    
 def load_calib(file_path):
 	data = {}
 	with open(file_path, 'r') as f:
@@ -122,7 +124,7 @@ def cam_2_lidar(calib):
 
 	return lidar_to_cam
 
-def find_correspondance(scan,proj_cam2lidar,rgb):
+def find_correspondance(scan,proj_cam2lidar,rgb,label):
 
 	pts_2d = project_to_image(scan[:,:3].transpose(),proj_cam2lidar)
 
@@ -136,19 +138,58 @@ def find_correspondance(scan,proj_cam2lidar,rgb):
 	
 	vel_coor = scan[valid_scans]
 
-	project_lidar2img_plane(vel_coor,pixel_coor,rgb)
+	label = label[valid_scans]
+	
+	project_lidar2img_plane(vel_coor,pixel_coor,rgb,label)
 
-
+def load_label(path):
+    
+    label = np.fromfile(path, dtype= np.uint32)
+    label = label.reshape((-1))
+    instance_label = label >> 16      # get upper half for instances
+    semantic_label = label & 0xFFFF   # get lower half for semantics
+    
+    new_semantic_label = np.zeros((semantic_label.shape))
+    
+    # refer: https://github.com/PRBonn/semantic-kitti-api/blob/master/config/semantic-kitti.yaml
+    vehicle_class = [10,13,18,20,252,256,257,258,259]
+    twowheeler_class = [11,15,31,32,253,255]
+    person_class = [30,254]
+    
+    replace_labels = {1: vehicle_class,
+                      2: twowheeler_class,
+                      3: person_class}
+    
+    for new_label, old_label_group in replace_labels.items():
+        for old_label in old_label_group:
+            new_semantic_label[semantic_label == old_label] = new_label
+    
+    return new_semantic_label
+    
+    
 def main():
-	rgb = cv2.cvtColor(cv2.imread(os.path.join('data/000000.png')), cv2.COLOR_BGR2RGB)
-
-	calib = load_calib('data/calib.txt')
-
-	scan = load_lidar('data/000000.bin')
-
-	proj_cam2lidar = cam_2_lidar(calib)
-
-	find_correspondance(scan, proj_cam2lidar, rgb)
-
+    
+    rgb = cv2.cvtColor(cv2.imread(os.path.join('data/000000.png')), cv2.COLOR_BGR2RGB)
+    label = load_label('data/000000.label')
+    calib = load_calib('data/calib.txt')
+    scan = load_lidar('data/000000.bin')
+    
+    proj_cam2lidar = cam_2_lidar(calib)
+    find_correspondance(scan, proj_cam2lidar, rgb, label)
+    
+    
 if __name__ == "__main__":
-	main()
+ 	main()
+
+
+
+
+
+
+
+
+
+
+
+
+
