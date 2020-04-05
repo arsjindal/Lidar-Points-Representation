@@ -33,7 +33,7 @@ proj_pgm1 = np.full((proj_H, proj_W, 5), -1,
 proj_x = np.zeros((0, 1), dtype=np.float32)        # [m, 1]: x
 proj_y = np.zeros((0, 1), dtype=np.float32)        # [m, 1]: y
 
-scan = np.fromfile("000114.bin",dtype= np.float32)
+scan = np.fromfile("data/000000.bin",dtype= np.float32)
 scan = scan.reshape((-1, 4))
 
 
@@ -55,7 +55,7 @@ scan_z = points[:, 2]
 # get angles of all points
 yaw = -np.arctan2(scan_y, scan_x)
 pitch = np.arcsin(scan_z / depth)
-pdb.set_trace()
+# pdb.set_trace()
 # get projections in image coords
 proj_x = 0.5 * (yaw / np.pi + 1.0)          # in [0.0, 1.0]
 proj_y = 1.0 - (pitch + abs(fov_down)) / fov        # in [0.0, 1.0]
@@ -122,7 +122,7 @@ proj_pgm[proj_y,proj_x,4]  = depth
 
 #proj_pgm = proj_pgm[:,767:1279,:]
 
-plt.imshow(proj_pgm[:,:,4])
+plt.imshow(proj_pgm[:,768:1281,4])
 plt.show()
 """
 plt.imshow(proj_pgm1[:,:,4])

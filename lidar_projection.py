@@ -13,7 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def project_lidar2img_plane(scan,pixel_coor,rgb,label):
+def project_lidar2img_plane(scan,pixel_coor,rgb,label,valid_scans):
     
 	proj_H = 64
 	proj_W = 2048
@@ -27,8 +27,8 @@ def project_lidar2img_plane(scan,pixel_coor,rgb,label):
     # x,y,z,remission,range,r,g,b,label
 	proj_pgm = np.full((proj_H, proj_W, 9), -1,
 	                          dtype=np.float32)
-	proj_pgm1 = np.full((proj_H, proj_W, 5), -1,
-	                          dtype=np.float32)
+	#proj_pgm1 = np.full((proj_H, proj_W, 5), -1,
+	#                          dtype=np.float32)
 
 	# for each point, where it is in the range image
 	proj_x = np.zeros((0, 1), dtype=np.float32)        # [m, 1]: x
@@ -76,16 +76,20 @@ def project_lidar2img_plane(scan,pixel_coor,rgb,label):
 	proj_pgm[proj_y,proj_x,0:3]  = points
 	proj_pgm[proj_y,proj_x,3]  = remissions
 	proj_pgm[proj_y,proj_x,4]  = depth
-	proj_pgm[proj_y,proj_x,5:8]  = rgb[(pixel_coor[1, :]).astype(int),\
+    
+	proj_pgm[proj_y[valid_scans],proj_x[valid_scans],6:]  = rgb[(pixel_coor[1, :]).astype(int),\
 										(pixel_coor[0, :]).astype(int)]/255.0
-	proj_pgm[proj_y,proj_x,8]  = label
+	proj_pgm[proj_y,proj_x,5]  = label
     
     #pdb.set_trace()
-	plt.imshow(proj_pgm[:,768:1281,8])
-	plt.show()
-
-	plt.imshow(proj_pgm[:,768:1281,5:8])
-	plt.show()
+        
+# 	plt.imshow(proj_pgm[:,768:1281,8])
+# 	plt.show()
+# 	plt.imshow(proj_pgm[:,768:1281,5:8])
+# 	plt.show()
+# 	plt.imshow(proj_pgm[:,768:1281,8])
+	return proj_pgm[:,768:1281]
+	
     
 def load_calib(file_path):
 	data = {}
@@ -136,11 +140,11 @@ def find_correspondance(scan,proj_cam2lidar,rgb,label):
 	
 	pixel_coor = pts_2d[:, valid_scans]
 	
-	vel_coor = scan[valid_scans]
+	vel_coor = scan#[valid_scans]
 
-	label = label[valid_scans]
+	label = label#[valid_scans]
 	
-	project_lidar2img_plane(vel_coor,pixel_coor,rgb,label)
+	return project_lidar2img_plane(vel_coor,pixel_coor,rgb,label,valid_scans)
 
 def load_label(path):
     
@@ -175,9 +179,18 @@ def main():
     scan = load_lidar('data/000000.bin')
     
     proj_cam2lidar = cam_2_lidar(calib)
-    find_correspondance(scan, proj_cam2lidar, rgb, label)
+    pgm = find_correspondance(scan, proj_cam2lidar, rgb, label)
     
-    
+    for i in range(9):
+        if i<6:
+            plt.imshow(pgm[...,i])
+            plt.show()
+        else:
+            plt.imshow(pgm[...,i:])
+            plt.show()
+            break
+        
+        
 if __name__ == "__main__":
  	main()
 
