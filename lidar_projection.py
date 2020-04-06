@@ -120,8 +120,8 @@ def cam_2_lidar(calib):
 	# Usage: img to lidar
 	
 	tr_vel, R_0_rect,P2= np.eye(4), np.eye(4), np.eye(4)
-	tr_vel[:3] = calib['Tr_velo_to_cam'].reshape(3,4)
-	R_0_rect[:3,:3] = calib['R0_rect'].reshape(3,3)
+	tr_vel[:3] = calib['Tr'].reshape(3,4)
+	R_0_rect[:3,:3] = np.eye(3)
 	P2[:3] = calib['P2'].reshape(3,4)
 	
 	lidar_to_cam = np.matmul(np.matmul(P2,R_0_rect),tr_vel)
@@ -173,23 +173,35 @@ def load_label(path):
     
 def main():
     
-    rgb = cv2.cvtColor(cv2.imread(os.path.join('data/000000.png')), cv2.COLOR_BGR2RGB)
-    label = load_label('data/000000.label')
-    calib = load_calib('data/calib.txt')
-    scan = load_lidar('data/000000.bin')
+    rgb = cv2.cvtColor(cv2.imread(os.path.join('data/seq_data/5/000000.png')), cv2.COLOR_BGR2RGB)
+    label = load_label('data/seq_data/5/000000.label')
+    calib = load_calib('data/seq_data/5/calib.txt')
+    scan = load_lidar('data/seq_data/5/000000.bin')
     
     proj_cam2lidar = cam_2_lidar(calib)
     pgm = find_correspondance(scan, proj_cam2lidar, rgb, label)
+
     
-    for i in range(9):
-        if i<6:
-            plt.imshow(pgm[...,i])
-            plt.show()
-        else:
-            plt.imshow(pgm[...,i:])
-            plt.show()
-            break
-        
+    fig, (ax1,ax2,ax3,ax4,ax5,ax6,ax7) = plt.subplots(7,1)
+
+    ax1.set_title('x')
+    ax2.set_title('y')
+    ax3.set_title('z')
+    ax4.set_title('reflectance')
+    ax5.set_title('depth')
+    ax6.set_title('label')
+    ax7.set_title('rgb')
+    ax1.imshow(pgm[...,0])
+    ax2.imshow(pgm[...,1])
+    ax3.imshow(pgm[...,2])
+    ax4.imshow(pgm[...,3])
+    ax5.imshow(pgm[...,4])
+    ax6.imshow(pgm[...,5])
+    ax7.imshow(pgm[...,6:])
+    #plt.tight_layout()
+    plt.subplots_adjust(top=1)
+    plt.show()
+
         
 if __name__ == "__main__":
  	main()
