@@ -88,7 +88,7 @@ def project_lidar2img_plane(scan,pixel_coor,rgb,label,valid_scans):
 # 	plt.imshow(proj_pgm[:,768:1281,5:8])
 # 	plt.show()
 # 	plt.imshow(proj_pgm[:,768:1281,8])
-	return proj_pgm[:,768:1281]
+	return proj_pgm[:,767:1279]
 	
     
 def load_calib(file_path):
@@ -140,24 +140,16 @@ def find_correspondance(scan,proj_cam2lidar,rgb,label):
 	
 	pixel_coor = pts_2d[:, valid_scans]
 	
-	
+# 	colors = [[255,255,255],[255,0,0],[0,255,0],[0,0,255]]
+# 	valid_labels = label[valid_scans]
+# 	label_image = np.zeros(rgb.shape,dtype=np.uint8)
+# 	for i in range(pixel_coor.shape[1]):
+# 		color = colors[int(valid_labels[i])]
+# 		cv2.circle(label_image,(pixel_coor[0,i].astype(int), pixel_coor[1,i].astype(int)),2,color=tuple(color),thickness=-1)
+# 	blend = cv2.addWeighted(rgb, 0.7, label_image, 0.3, 1)
+# 	plt.imshow(blend)
 
-	colors = [[255,255,255],[255,0,0],[0,255,0],[0,0,255]]
-	valid_labels = label[valid_scans]
-	label_image = np.zeros(rgb.shape,dtype=np.uint8)
-	for i in range(pixel_coor.shape[1]):
-		color = colors[int(valid_labels[i])]
-		cv2.circle(label_image,(pixel_coor[0,i].astype(int), pixel_coor[1,i].astype(int)),2,color=tuple(color),thickness=-1)
-	blend = cv2.addWeighted(rgb, 0.7, label_image, 0.3, 1)
-
-	plt.imshow(blend)
-	
-
-
-
-	vel_coor = scan#[valid_scans]
-
-	label = label#[valid_scans]
+	vel_coor = scan
 	
 	return project_lidar2img_plane(vel_coor,pixel_coor,rgb,label,valid_scans)
 
@@ -184,14 +176,21 @@ def load_label(path):
             new_semantic_label[semantic_label == old_label] = new_label
     
     return new_semantic_label
+ 
+
+def get_pgm(scan, rgb, label, calib):
     
+    proj_cam2lidar = cam_2_lidar(calib)
+    pgm = find_correspondance(scan, proj_cam2lidar, rgb, label)
+    return pgm
+
     
 def main():
     
-    rgb = cv2.cvtColor(cv2.imread(os.path.join('data/seq_data/3/000000.png')), cv2.COLOR_BGR2RGB)
-    label = load_label('data/seq_data/3/000000.label')
-    calib = load_calib('data/seq_data/3/calib.txt')
-    scan = load_lidar('data/seq_data/3/000000.bin')
+    rgb = cv2.cvtColor(cv2.imread(os.path.join('data/000000.png')), cv2.COLOR_BGR2RGB)
+    label = load_label('data/000000.label')
+    calib = load_calib('data/calib.txt')
+    scan = load_lidar('data/000000.bin')
     
     proj_cam2lidar = cam_2_lidar(calib)
     pgm = find_correspondance(scan, proj_cam2lidar, rgb, label)
