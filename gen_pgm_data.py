@@ -10,24 +10,28 @@ import os
 import tqdm
 import numpy as np
 import cv2
-
+from sys import exit
        
 if __name__ == "__main__": 
     
+    # Select sequence number here
     seq_num = 4
     seq_num_str = str(seq_num) if seq_num > 9 else '0'+str(seq_num)
-    gen_single = False
-    file_to_gen = 0
     
+    
+    gen_single = False # if only one file is reqd
+    file_to_gen = 0 # if only one file is reqd
+    
+    # Select input data path here
     rgb_dir = 'E:/data_odometry_color/dataset/sequences/' + seq_num_str +'/image_2/'
     label_dir = 'E:/data_odometry_labels/sequences/' + seq_num_str +'/labels/'
     scan_dir = 'E:/data_odometry_velodyne/dataset/sequences/' + seq_num_str +'/velodyne/'   
     calib_path = 'E:/data_odometry_calib/dataset/sequences/' + seq_num_str +'/calib.txt'
     
+    # Select output path here
     output_dir = 'E:/pgm_output/' + seq_num_str + '/'
     
     print('Generating PGM for sequence ', seq_num_str)
-    
     print('\nLoading rgb from ', rgb_dir)
     print('Loading labels from ', label_dir)
     print('Loading lidar scans from ', scan_dir)
@@ -48,7 +52,12 @@ if __name__ == "__main__":
     num_files = len(rgb_files)
     calib = lidar_proj.load_calib(calib_path)
     
-    print('Total timesteps: ', num_files)
+    print('Total num of files: ', num_files)
+    print('Estimated pgm data size: ', 1.153e-3*num_files, ' GB\n')
+    _dummy = 1
+    
+    if input('Start generating PGM?(y/n):\t')!='y':
+        exit(0)
     
     for file_num in tqdm.tqdm((range(num_files))):
         
