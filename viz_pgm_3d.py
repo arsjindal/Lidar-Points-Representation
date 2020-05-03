@@ -90,16 +90,25 @@ def transform_to_cam(world_coods, cam_pos, cam_intrinsics):
     return cam_coods[:2]
     # return image_coods
 
+def scatter_plot(cam_coods):
+        plt.scatter(cam_coods[0],-cam_coods[1],0.001)
+        # plt.rcParams['figure.facecolor'] = 'black'
+        plt.axis('scaled')
+        plt.ylim(0,1)
+        plt.xlim(-1,1)
+        plt.show()
 
 
 if __name__ == '__main__':    
     
     CAM_POS = [-5,0,5] # x, y, z
     CAM_INTRINSICS = [0,0,1] #u0, v0, f
+    IMG_DIM = [500,1000] # ht, wd
+    
     # pgm_path = 'E:/pgm_output/10/000000.npy'
     
     # load pgm
-    pgm_dir = 'E:/pgm_output/10/'   
+    pgm_dir = 'E:/pgm_output/08/'   
     
     pgm_files = os.listdir(pgm_dir)
     num_files = len(pgm_files)
@@ -124,11 +133,24 @@ if __name__ == '__main__':
         
         cam_coods = transform_to_cam(world_coods_list, CAM_POS, CAM_INTRINSICS)
         
-        plt.scatter(cam_coods[0],-cam_coods[1],0.001)
-        # plt.rcParams['figure.facecolor'] = 'black'
-        plt.axis('scaled')
-        plt.ylim(0,1)
-        plt.xlim(-1,1)
-        plt.show()
-
-# break
+        # scatter_plot(cam_coods)
+                      
+        img = np.zeros((IMG_DIM[0],IMG_DIM[1],3), np.uint8)
+        image_coods = np.floor(cam_coods*IMG_DIM[0] + IMG_DIM[0]).astype(int)
+        image_coods[0] = np.clip(image_coods[0], 0, IMG_DIM[1]-1)
+        image_coods[1] = np.clip(image_coods[1], 0, IMG_DIM[0]-1)
+        
+        car_points = labels_list==1
+        person_points = labels_list==2
+        bike_points = labels_list==3
+        
+        img[image_coods[1],image_coods[0],:] = 100
+        img[image_coods[1,car_points], image_coods[0,car_points]] = [255,0,255]
+        img[image_coods[1,person_points], image_coods[0,person_points]] = [0,255,255]
+        img[image_coods[1,bike_points], image_coods[0,bike_points]] = [255,255,0]
+        
+        cv2.imshow('ImageWindow', img)
+        if cv2.waitKey(10) & 0xFF == ord('q'):
+            break
+        # print(img.shape)
+cv2.destroyAllWindows()
