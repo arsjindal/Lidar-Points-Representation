@@ -11,16 +11,18 @@ import tqdm
 import numpy as np
 import cv2
 from sys import exit
-       
+import pickle
+
 if __name__ == "__main__": 
     
     # Select sequence number here
-    seq_num = 4
-    seq_num_str = str(seq_num) if seq_num > 9 else '0'+str(seq_num)
+    SEQ_NUM = 4
+    FILE_FORMAT = 2 # 1: .npy 2: pickle
+   
+    GEN_SINGLE = False # True if only one file is reqd
+    FILE_TO_GEN = 0 # file num if only one file is reqd
     
-    
-    gen_single = False # if only one file is reqd
-    file_to_gen = 0 # if only one file is reqd
+    seq_num_str = str(SEQ_NUM) if SEQ_NUM > 9 else '0'+str(SEQ_NUM)
     
     # Select input data path here
     rgb_dir = 'E:/data_odometry_color/dataset/sequences/' + seq_num_str +'/image_2/'
@@ -61,7 +63,7 @@ if __name__ == "__main__":
     
     for file_num in tqdm.tqdm((range(num_files))):
         
-        if gen_single and file_num != file_to_gen:
+        if GEN_SINGLE and file_num != FILE_TO_GEN:
             continue
         
         rgb_path = rgb_dir + rgb_files[file_num]
@@ -75,16 +77,21 @@ if __name__ == "__main__":
         pgm = lidar_proj.get_pgm(scan, rgb, label, calib)
         
         output_path = output_dir + rgb_files[file_num].split('.')[0]
-        np.save(output_path, pgm)
         
-        if gen_single: 
+        if FILE_FORMAT == 1:
+            np.save(output_path, pgm)
+        elif FILE_FORMAT == 2:        
+            with open(output_path, 'wb') as f:
+                pickle.dump(pgm, f)
+        else:
+            raise ValueError('Invalid file type selected')
+            
+        if GEN_SINGLE: 
             break    
         
     print('\nPGM data at ', output_dir)
     
-    
-    
-    
+       
     
     
     

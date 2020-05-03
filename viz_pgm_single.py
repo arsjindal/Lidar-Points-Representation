@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 
-pgm_path = 'E:/pgm_output/00/000000.npy'
+pgm_path = 'E:/pgm_output/train/09/000000.npy'
 
 pgm = np.load(pgm_path)
 
