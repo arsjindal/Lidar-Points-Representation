@@ -12,16 +12,12 @@ import cv2
 from scipy.spatial.transform import Rotation as R
 import os
 from numpy.linalg import norm 
-
-# img = cv2.imread('test_img.jpg')
-# cv2.imshow('ImageWindow', img)
-# cv2.waitKey(0); cv2.destroyAllWindows()
-# print(img.shape)
+import time
 
 '''
     1. Convert pgm to coods list -done
     2. Compute transformation and transform pts -done
-    3. Plot points on image with label
+    3. Plot points on image with label- done
 '''
     
 def get_transformation_matrix():
@@ -101,26 +97,47 @@ def scatter_plot(cam_coods):
 
 if __name__ == '__main__':    
     
+    
     CAM_POS = [-5,0,5] # x, y, z
-    CAM_INTRINSICS = [0,0,1] #u0, v0, f
+    CAM_INTRINSICS = [500,500,500] #u0, v0, f
     IMG_DIM = [500,1000] # ht, wd
     
     # pgm_path = 'E:/pgm_output/10/000000.npy'
     
     # load pgm
-    pgm_dir = 'E:/pgm_output/08/'   
+    xyz_pgm_dir = 'E:/pgm_output/08/'   
     
-    pgm_files = os.listdir(pgm_dir)
-    num_files = len(pgm_files)
+    label_pgm_dir = 'E:/model_test_output/dualsqueezeseg/renamed/' 
+    rgb_dir = 'E:/data_odometry_color/dataset/sequences/08/image_2/'
+    video_name = 'dualsqueezeseg'
+    
+    xyz_pgm_files = os.listdir(xyz_pgm_dir)
+    rgb_files = os.listdir(rgb_dir)
+    label_pgm_files = os.listdir(label_pgm_dir)
+    
+    num_files = len(label_pgm_files)
+    video=cv2.VideoWriter(video_name+'.mp4',-1,8,(IMG_DIM[1],IMG_DIM[0]))
     
     for file_num in range(num_files):
-        print(file_num,'/',num_files)
-        pgm_path = pgm_dir + pgm_files[file_num]  
-      
-        pgm = np.load(pgm_path)
+        
+        print(file_num,'/',num_files, " ",label_pgm_files[file_num])
+        xyz_pgm_path = xyz_pgm_dir + xyz_pgm_files[file_num]  
+        rgb_path = rgb_dir + rgb_files[file_num]
+        label_pgm_path = label_pgm_dir + label_pgm_files[file_num]
+        
+        xyz_pgm = np.load(xyz_pgm_path)
+        label_pgm = np.load(label_pgm_path)
+        # rgb = cv2.cvtColor(cv2.imread(rgb_path), cv2.COLOR_BGR2RGB)
+        rgb = cv2.imread(rgb_path)
         
         # convert pgm to list of points having (x,y,z,label) and shape: num_points x 4
-        points = pgm[...,[0,1,2,5]]
+        
+        xyz_pgm = xyz_pgm[...,:3]
+        label_pgm = np.expand_dims(label_pgm[...,-1], 2)
+        points = np.concatenate((xyz_pgm, label_pgm),2)
+        
+        # points = pgm[...,[0,1,2,5]] if pgm.shape[-1]==9 else pgm[...,[0,1,2,-1]]
+        
         points_list = points.reshape(-1,4)
         
         # removing points that have no info
@@ -131,26 +148,39 @@ if __name__ == '__main__':
         world_coods_list = points_list[:,:3].T
         world_coods_list = np.vstack((world_coods_list, np.ones((1,world_coods_list.shape[-1]))))
         
-        cam_coods = transform_to_cam(world_coods_list, CAM_POS, CAM_INTRINSICS)
+        image_coods = transform_to_cam(world_coods_list, CAM_POS, CAM_INTRINSICS)
         
         # scatter_plot(cam_coods)
-                      
-        img = np.zeros((IMG_DIM[0],IMG_DIM[1],3), np.uint8)
-        image_coods = np.floor(cam_coods*IMG_DIM[0] + IMG_DIM[0]).astype(int)
+        # labelling
+        img = np.zeros((IMG_DIM[0],IMG_DIM[1],3), np.uint8) 
+        image_coods = np.floor(image_coods).astype(int)
         image_coods[0] = np.clip(image_coods[0], 0, IMG_DIM[1]-1)
         image_coods[1] = np.clip(image_coods[1], 0, IMG_DIM[0]-1)
         
         car_points = labels_list==1
-        person_points = labels_list==2
-        bike_points = labels_list==3
+        person_points = labels_list==3
+        bike_points = labels_list==2
         
-        img[image_coods[1],image_coods[0],:] = 100
-        img[image_coods[1,car_points], image_coods[0,car_points]] = [255,0,255]
-        img[image_coods[1,person_points], image_coods[0,person_points]] = [0,255,255]
-        img[image_coods[1,bike_points], image_coods[0,bike_points]] = [255,255,0]
+        img[image_coods[1],image_coods[0],:]                            = 255
+        img[image_coods[1,car_points], image_coods[0,car_points]]       = [0,165,255]
+        img[image_coods[1,person_points], image_coods[0,person_points]] = [255,0,255]
+        img[image_coods[1,bike_points], image_coods[0,bike_points]]     = [255,255,0]
+        
+        #overlay rgb image
+        dim = (300,100)
+        resize_rgb = cv2.resize(rgb, dim, interpolation = cv2.INTER_AREA)
+        # cv2.imshow('rgbWindow', rgb)
+        img[-100:,0:300] = resize_rgb
+        
+        # plt.imshow(points[...,-1])
+        # plt.show()
         
         cv2.imshow('ImageWindow', img)
         if cv2.waitKey(10) & 0xFF == ord('q'):
             break
+        
+        
+        video.write(img)
         # print(img.shape)
 cv2.destroyAllWindows()
+video.release()
