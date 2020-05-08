@@ -98,18 +98,18 @@ def scatter_plot(cam_coods):
 if __name__ == '__main__':    
     
     
-    CAM_POS = [-5,0,5] # x, y, z
-    CAM_INTRINSICS = [500,500,500] #u0, v0, f
-    IMG_DIM = [500,1000] # ht, wd
+    CAM_POS = [-5,0,5] # x, y, z [5,3,7]
+    CAM_INTRINSICS = [500,500,500] #u0, v0, f # [900,500,400] 
+    IMG_DIM = [500,1000] # ht, wdq
     
     # pgm_path = 'E:/pgm_output/10/000000.npy'
     
     # load pgm
     xyz_pgm_dir = 'E:/pgm_output/08/'   
-    
-    label_pgm_dir = 'E:/model_test_output/dualsqueezeseg/renamed/' 
+    # label_pgm_dir = 'E:/pgm_output/08/'
+    label_pgm_dir = 'E:/model_test_output/normcut/renamed/' 
     rgb_dir = 'E:/data_odometry_color/dataset/sequences/08/image_2/'
-    video_name = 'dualsqueezeseg'
+    video_name = '../videos/xyz'
     
     xyz_pgm_files = os.listdir(xyz_pgm_dir)
     rgb_files = os.listdir(rgb_dir)
@@ -118,7 +118,13 @@ if __name__ == '__main__':
     num_files = len(label_pgm_files)
     video=cv2.VideoWriter(video_name+'.mp4',-1,8,(IMG_DIM[1],IMG_DIM[0]))
     
+    video2=cv2.VideoWriter('../videos/2d_effnet.mp4',-1,8,(512,64))
+    
+    
     for file_num in range(num_files):
+        
+        if file_num == 401:
+            break
         
         print(file_num,'/',num_files, " ",label_pgm_files[file_num])
         xyz_pgm_path = xyz_pgm_dir + xyz_pgm_files[file_num]  
@@ -126,14 +132,16 @@ if __name__ == '__main__':
         label_pgm_path = label_pgm_dir + label_pgm_files[file_num]
         
         xyz_pgm = np.load(xyz_pgm_path)
-        label_pgm = np.load(label_pgm_path)
-        # rgb = cv2.cvtColor(cv2.imread(rgb_path), cv2.COLOR_BGR2RGB)
+        label_pgm = np.load(label_pgm_path,allow_pickle = True)
         rgb = cv2.imread(rgb_path)
         
         # convert pgm to list of points having (x,y,z,label) and shape: num_points x 4
         
         xyz_pgm = xyz_pgm[...,:3]
-        label_pgm = np.expand_dims(label_pgm[...,-1], 2)
+        label_pgm = np.expand_dims(label_pgm[...,-1], 2) if label_pgm.shape[-1]==4 else np.expand_dims(label_pgm[...,5], 2)
+        
+        # label_pgm = np.expand_dims(label_pgm[0],2)
+        
         points = np.concatenate((xyz_pgm, label_pgm),2)
         
         # points = pgm[...,[0,1,2,5]] if pgm.shape[-1]==9 else pgm[...,[0,1,2,-1]]
@@ -167,20 +175,29 @@ if __name__ == '__main__':
         img[image_coods[1,bike_points], image_coods[0,bike_points]]     = [255,255,0]
         
         #overlay rgb image
-        dim = (300,100)
-        resize_rgb = cv2.resize(rgb, dim, interpolation = cv2.INTER_AREA)
+        # dim = (1200,400)
+        
+        # resize_rgb = cv2.resize(rgb, dim, interpolation = cv2.INTER_AREA)
         # cv2.imshow('rgbWindow', rgb)
-        img[-100:,0:300] = resize_rgb
+        # img[-100:,0:300] = resize_rgb
+               
+        video.write(img)
         
-        # plt.imshow(points[...,-1])
-        # plt.show()
+        img2 = np.zeros((64,512,3), np.uint8)
+        img2[label_pgm[...,0]==1] = [0,165,255]
+        img2[label_pgm[...,0]==2] = [255,0,255]
+        img2[label_pgm[...,0]==3] = [255,255,0]
         
-        cv2.imshow('ImageWindow', img)
+        video2.write(img2)
+        
+        cv2.imshow('3d', img)
+        cv2.imshow('2d', img2)
+        
         if cv2.waitKey(10) & 0xFF == ord('q'):
             break
         
         
-        video.write(img)
         # print(img.shape)
 cv2.destroyAllWindows()
+video2.release()
 video.release()
