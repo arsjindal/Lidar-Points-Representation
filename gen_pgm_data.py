@@ -22,13 +22,20 @@ if __name__ == "__main__":
     GEN_SINGLE = False # True if only one file is reqd
     FILE_TO_GEN = 0 # file num if only one file is reqd
     
+    # Select input data path here
+    RGB_DIR = 'E:/data_odometry_color/dataset/sequences/' 
+    LABEL_DIR = 'E:/data_odometry_labels/sequences/' 
+    SCAN_DIR = 'E:/data_odometry_velodyne/dataset/sequences/' 
+    CALIB_DIR = 'E:/data_odometry_calib/dataset/sequences/'
+    
+    
     seq_num_str = str(SEQ_NUM) if SEQ_NUM > 9 else '0'+str(SEQ_NUM)
     
     # Select input data path here
-    rgb_dir = 'E:/data_odometry_color/dataset/sequences/' + seq_num_str +'/image_2/'
-    label_dir = 'E:/data_odometry_labels/sequences/' + seq_num_str +'/labels/'
-    scan_dir = 'E:/data_odometry_velodyne/dataset/sequences/' + seq_num_str +'/velodyne/'   
-    calib_path = 'E:/data_odometry_calib/dataset/sequences/' + seq_num_str +'/calib.txt'
+    rgb_dir = RGB_DIR + seq_num_str +'/image_2/'
+    label_dir = LABEL_DIR + seq_num_str +'/labels/'
+    scan_dir = SCAN_DIR + seq_num_str +'/velodyne/'   
+    calib_path = CALIB_DIR + seq_num_str +'/calib.txt'
     
     # Select output path here
     output_dir = 'E:/pgm_output/' + seq_num_str + '/'
