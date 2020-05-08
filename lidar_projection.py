@@ -81,13 +81,8 @@ def project_lidar2img_plane(scan,pixel_coor,rgb,label,valid_scans):
 										(pixel_coor[0, :]).astype(int)]/255.0
 	proj_pgm[proj_y,proj_x,5]  = label
     
-    #pdb.set_trace()
         
-# 	plt.imshow(proj_pgm[:,768:1281,8])
-# 	plt.show()
-# 	plt.imshow(proj_pgm[:,768:1281,5:8])
-# 	plt.show()
-# 	plt.imshow(proj_pgm[:,768:1281,8])
+
 	return proj_pgm[:,767:1279]
 	
     
