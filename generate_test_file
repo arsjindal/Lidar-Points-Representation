@@ -1,81 +1,123 @@
-###############################################################
+############################################################################
 # Generates test data by loading the trained model
 #                             April 2020
-#          Ravi Konkimalla | University of Pennsylvania
-###############################################################
+#          Ravi Konkimalla, Neil Rodrigues | University of Pennsylvania
+############################################################################
 
 
 import os
-import numpy as np
-import torch
-import sys
-import torch.nn as nn
-import tqdm
 import time
-from config import *
+import numpy
+import torch
+import math
+import pdb
+
+import sys
+import numpy as np
+import torch.nn as nn
+from PIL import Image, ImageOps
+import torchvision.models as models
+
+from torch.optim import SGD, Adam
+from torch.autograd import Variable
+
+from dataloader import Squeeze_Seg
+from torch.utils.data import DataLoader
+from torchvision.transforms import ToTensor, ToPILImage, Resize
+import matplotlib.pyplot as plt
+
+from utils.util_iou_eval import iouEval
+
+
+from dataloader import Squeeze_Seg
+from infer_config import *
+
+sys.path.append(os.path.join(ARGS_ROOT,'models',ARGS_MODEL_NAME+'/'))
+print(ARGS_MODEL_NAME)
+module = __import__(ARGS_MODEL_NAME)
+Network = getattr(module,"Net")
+
+from utils.util_iou_eval import iouEval, getColorEntry
+from utils.calculate_weights import load_class_weights
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-sys.path.append(os.path.join(ARGS_ROOT,'models',ARGS_MODEL_NAME+'/'))
-module = __import__(ARGS_MODEL_NAME)
-Network = getattr(module,"Net")
-model = Network(data_dict) 
+def load_my_state_dict(model, state_dict):
+    
+    own_state = model.state_dict()
+    
+    for name, param in state_dict.items():
+        if name not in own_state:
+            print("[weight not copied for %s]"%(name)) 
+            continue
+        own_state[name].copy_(param)
+    return model
 
+def test(model,output_dir):
+    print('Total Number of classes is {}'.format(NUM_CLASSES))
 
-def viz_test(model_pth,pgm_dir,output_dir,data_type):
+    dataset_val = Squeeze_Seg(ROOT_DIR,'08',ARGS_INPUT_TYPE_1,ARGS_INPUT_TYPE_2)
 
-    pgm_dir = 'E:/pgm_output/08/'
-    model = torch.load(model_pth)
-    model.load_state_dict(torch.load(model_pth))
-    model.cuda()
+    loader_val = DataLoader(
+        dataset_val,
+        num_workers = ARGS_NUM_WORKERS,
+        batch_size = ARGS_VAL_BATCH_SIZE,
+        shuffle = False)
+
+    weight = load_class_weights()
+
+    iouEvalVal = iouEval(NUM_CLASSES)
+    labels = np.array([(0,0,0),(255,0,0),(0,255,0),(0,0,255)] )
     model.eval()
-    print('model loaded')
+    total_time=0
+    iters = 00
+    for step, (image,image_2,mask,label) in enumerate(loader_val):
+            
 
-    pgm_files = os.listdir(pgm_dir)
-    num_files = len(pgm_files)
+
+        if ARGS_CUDA:
+            image = image.cuda()
+            image_2 = image_2.cuda()
+            label = label.cuda()
+            mask = mask.cuda()
+
+        image = Variable(image)
+        label = Variable(label)
+        mask = Variable(mask)
+        image_2 = Variable(image_2)
+        print(image.shape)
+        output = model(image,image_2,mask)
+
+        
+        label_out = output[0].max(0)[1].data
+        image = image[0,:,:,:].permute(1,2,0)
+        image = image[:,:,:3]
+        image = torch.cat((image,label_out.view(64,512,1).float()),axis = 2)
+
+        output_path = output_dir + str(iters)
+        np.save(output_path, image.cpu().numpy())
+        print(iters)
+        iters += 1
+        
+        if iters >= 400:
+            break
     
-    #start_time = time.time()
+
+
+
+if __name__ == "__main__":
     
-    for file_num in tqdm.tqdm(range(num_files)):
-        #print(file_num,'/',num_files)
-        pgm_path = pgm_dir + pgm_files[file_num]  
-      
-        pgm = np.load(pgm_path)
-        
-        if (data_type == 0):
-            input_pgm = torch.from_numpy(pgm[:,:,:5])
-        else:
-            input_pgm = torch.from_numpy(pgm[:,:,[0,1,2,3,4,6,7,8]])
-        pgm_vis = torch.from_numpy(pgm[:,:,:3])
-        
-        input_pgm = input_pgm.view(1,input_pgm.shape[0],input_pgm.shape[1],input_pgm.shape[2])
-        
-        inputs = input_pgm.permute(0,3,1,2)
-        
-        output = model(inputs.cuda(),None,None)  
-
-        preds = torch.argmax(output,axis = 1).view(64,512,1)
-
-        pgm_vis = torch.cat((pgm_vis.float(),preds.float().cpu()),axis = -1)
-        
-        output_path = output_dir + pgm_files[file_num].split('.')[0]
-        np.save(output_path, pgm_vis)
-
-
-    #print(time.time() - start_time)
-    return None
-
-if __name__ == '__main__':
-    
-    model_type = 'mobileunet'
+    print(device)
+    model_type = 'res_fcn'
     models_pth = 'E:/project_522/train_models/'
     model_pth = models_pth + model_type + '.pth'
+    model = Network(data_dict)
+    torch.set_num_threads(ARGS_NUM_WORKERS)
+    model.load_state_dict(torch.load(model_pth))
     data_type = 0
     seq_str_num = '08'
     pgm_dir = 'E:/project_522/Kitti/pgm_output/' + seq_str_num +'/'
-    output_dir = 'E:/project_522/Kitti/pgm_test/' + model_type + '/' + seq_str_num + '/'
-    
+    output_dir = 'E:/project_522/Kitti/pgm_test/' + model_type + '/updated' + '/'
     if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    
-    viz_test(model_pth, pgm_dir, output_dir, data_type)
+      os.makedirs(output_dir)
+    test(model,output_dir)
