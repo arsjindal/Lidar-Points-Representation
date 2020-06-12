@@ -6,12 +6,6 @@ Created on Sun Mar 29 22:15:15 2020
 """
 
 import numpy as np
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Mar 29 22:15:15 2020
-
-@author: ravit
-"""
 import pdb
 import numpy as np
 import matplotlib.pyplot as plt
